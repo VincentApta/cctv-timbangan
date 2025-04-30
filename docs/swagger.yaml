@@ -1,0 +1,51 @@
+basePath: /
+definitions:
+  main.CaptureRequest:
+    properties:
+      code:
+        example: QZNWZI
+        type: string
+      ip:
+        example: 192.168.68.126
+        type: string
+    type: object
+  main.Snapshot:
+    properties:
+      captured_at:
+        type: string
+      filename:
+        type: string
+      id:
+        type: integer
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  description: Capture snapshot from EZVIZ camera over RTSP.
+  title: EZVIZ RTSP Snapshot API
+  version: "1.0"
+paths:
+  /capture:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Camera IP and RTSP code
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/main.CaptureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.Snapshot'
+        "500":
+          description: Internal error
+          schema:
+            type: string
+      summary: Capture snapshot from EZVIZ H1c camera
+swagger: "2.0"
