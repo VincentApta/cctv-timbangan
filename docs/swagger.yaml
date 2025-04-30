@@ -25,7 +25,7 @@ info:
   title: EZVIZ RTSP Snapshot API
   version: "1.0"
 paths:
-  /capture:
+  /capture-multiple:
     post:
       consumes:
       - application/json
@@ -42,10 +42,8 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/main.Snapshot'
-        "500":
-          description: Internal error
-          schema:
-            type: string
-      summary: Capture snapshot from EZVIZ H1c camera
+            items:
+              $ref: '#/definitions/main.Snapshot'
+            type: array
+      summary: Capture multiple snapshots
 swagger: "2.0"

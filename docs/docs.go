@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/capture": {
+        "/capture-multiple": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -23,7 +23,7 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Capture snapshot from EZVIZ H1c camera",
+                "summary": "Capture multiple snapshots",
                 "parameters": [
                     {
                         "description": "Camera IP and RTSP code",
@@ -39,13 +39,10 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/main.Snapshot"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal error",
-                        "schema": {
-                            "type": "string"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/main.Snapshot"
+                            }
                         }
                     }
                 }

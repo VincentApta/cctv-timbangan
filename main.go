@@ -52,36 +52,46 @@ func CaptureSnapshot(rtspURL, outputPath string) error {
 	return cmd.Run()
 }
 
-// CaptureSnapshotHandler godoc
-// @Summary Capture snapshot from EZVIZ H1c camera
+func CaptureMultipleSnapshots(ip, code string, count int) []Snapshot {
+	timestamp := time.Now().UnixNano()
+	outputPattern := fmt.Sprintf("snapshots/snapshot_%d_%%d.jpg", timestamp)
+	rtspURL := fmt.Sprintf("rtsp://admin:%s@%s:554/h264", code, ip)
+
+	cmd := exec.Command("ffmpeg", "-rtsp_transport", "tcp", "-y", "-i", rtspURL, "-vf", "scale=640:-1", "-frames:v", fmt.Sprint(count), "-q:v", "2", outputPattern)
+	err := cmd.Run()
+	if err != nil {
+		fmt.Println("Failed to capture multiple:", err)
+		return nil
+	}
+
+	// Save snapshot metadata
+	var results []Snapshot
+	for i := 1; i <= count; i++ {
+		filename := fmt.Sprintf("snapshot_%d_%d.jpg", timestamp, i)
+		fmt.Println("Captured:", filename)
+		snap := Snapshot{Filename: filename, CapturedAt: time.Now()}
+		db.Create(&snap)
+		results = append(results, snap)
+	}
+
+	return results
+}
+
+// CaptureMultipleHandler godoc
+// @Summary Capture multiple snapshots
 // @Accept json
 // @Produce json
 // @Param data body CaptureRequest true "Camera IP and RTSP code"
-// @Success 200 {object} Snapshot
-// @Failure 500 {string} string "Internal error"
-// @Router /capture [post]
-func CaptureSnapshotHandler(c *fiber.Ctx) error {
+// @Success 200 {array} Snapshot
+// @Router /capture-multiple [post]
+func CaptureMultipleHandler(c *fiber.Ctx) error {
 	var req CaptureRequest
 	if err := c.BodyParser(&req); err != nil {
 		return c.Status(400).SendString("Invalid input")
 	}
 
-	rtspURL := fmt.Sprintf("rtsp://admin:%s@%s:554/h264", req.Code, req.IP)
-	for i := 1; i < 5; i++ {
-		filename := fmt.Sprintf("snapshot_%d.jpg", time.Now().Unix())
-		outputPath := fmt.Sprintf("./snapshots/%s", filename)
-
-		if err := CaptureSnapshot(rtspURL, outputPath); err != nil {
-			return c.Status(500).SendString("Failed to capture snapshot")
-		}
-
-		snap := Snapshot{Filename: filename, CapturedAt: time.Now()}
-		db.Create(&snap)
-	}
-
-	return c.JSON(fiber.Map{
-		"message": "Snapshot captured successfully",
-	})
+	snaps := CaptureMultipleSnapshots(req.IP, req.Code, 5)
+	return c.JSON(snaps)
 }
 
 func main() {
@@ -95,7 +105,7 @@ func main() {
 	dir, _ := os.Getwd()
 	app.Static("/snapshots", dir+"/snapshots")
 
-	app.Post("/capture", CaptureSnapshotHandler)
+	app.Post("/capture-multiple", CaptureMultipleHandler)
 
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
